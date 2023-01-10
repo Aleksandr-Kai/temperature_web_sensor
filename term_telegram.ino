@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <EEPROM.h>
@@ -14,6 +12,8 @@
 #include "wifi.h"
 
 //************************************************************************************
+
+// Initialize
 void setup()
 {
   EEPROM.begin(EEPROM_SIZE);
@@ -51,6 +51,7 @@ void setup()
   CreateWebServer();
 }
 
+//************************************************************************************
 int loopCount = 0;
 int64_t startedTime = 0;
 int lastTemp = 0;

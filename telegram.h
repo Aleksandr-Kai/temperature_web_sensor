@@ -23,13 +23,13 @@ void newMsg(FB_msg &msg)
     {
         sensors.requestTemperatures();
         tempSensor1 = sensors.getTempC(sensor1); // Получить значение температуры
-        sprintf(buff, "Temperature [%s]: %s", name, String(tempSensor1, 1));
+        sprintf(buff, "Температура [%s]: %s", name, String(tempSensor1, 1));
         bot.sendMessage(buff);
         Serial.println(buff);
     }
     else if (msg.text == "/ip")
     {
-        bot.sendMessage("Web server: http://" + serverIP);
+        bot.sendMessage("Адрес web сервера: http://" + serverIP);
     }
 
     // выводим всю информацию о сообщении

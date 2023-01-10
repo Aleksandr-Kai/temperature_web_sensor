@@ -1,8 +1,8 @@
-#define EEPROM_SIZE 96
+#define EEPROM_SIZE 96 // save ssid & password & device_name
 
-void (*resetFunc)(void) = 0;
+void (*resetFunc)(void) = 0; // reboot device
 
-#define STATUS_PIN D8
+#define STATUS_PIN D8 // led pin
 
 // TRACE output simplified, can be deactivated here
 #define TRACE(...) Serial.printf(__VA_ARGS__)
