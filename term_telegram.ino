@@ -42,6 +42,7 @@ void setup()
 
     bot.setChatID(BOT_CHAT_ID);
     bot.attach(newMsg);
+    bot.sendMessage("Подключен датчик [" + name + "]  http://" + serverIP);
   }
   else
   {
