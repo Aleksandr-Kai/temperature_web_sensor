@@ -227,7 +227,7 @@ String htmlDocument = R"rawliteral(<!DOCTYPE html>
                 .catch(error => {err.innerText = error.message;});
             });
             setInterval(() => {
-                fetch(`http://${devIP}/params`)
+                fetch(`http://${devIP}/temp`)
                     .then(response => response.json())
                     .then(data => {
                         temp.innerText = data.temperature;

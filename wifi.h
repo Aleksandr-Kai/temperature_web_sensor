@@ -96,7 +96,7 @@ void CreateWebServer()
     webServer.on("/params", HTTP_GET, get_params);
     webServer.on("/params", HTTP_PUT, put_params);
     webServer.on("/reset", HTTP_GET, get_reset);
-    webServer.on("/temp", get_temp);
+    webServer.on("/temp", HTTP_GET, get_temp);
     webServer.onNotFound(notFound);
     webServer.begin();
     Serial.print("HTTP server start on ");
