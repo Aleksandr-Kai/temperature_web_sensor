@@ -52,38 +52,11 @@ void setup()
 }
 
 //************************************************************************************
-int loopCount = 0;
-int64_t startedTime = 0;
-int lastTemp = 0;
 void loop()
 {
   webServer.handleClient();
   if (WiFi.status() == WL_CONNECTED)
   {
-    bot.tick(); // тикаем в луп
-    delay(1);
-    if (++loopCount > 1000)
-    {
-      loopCount = 0;
-      startedTime++;
-      if (startedTime >= 60 * 30) // 30 minuts
-      {
-        startedTime = 0;
-        Serial.println();
-        sensors.requestTemperatures();
-        tempSensor1 = sensors.getTempC(sensor1); // Получить значение температуры
-        if (tempSensor1 - lastTemp > 2)
-        {
-          lastTemp = tempSensor1;
-        }
-        else if (tempSensor1 < lastTemp)
-        {
-          lastTemp = tempSensor1;
-          sprintf(buff, "Temperature [%s]: %s", name, String(tempSensor1, 1));
-          bot.sendMessage(buff);
-        }
-        Serial.println("Temperature: " + String(tempSensor1, 1));
-      }
-    }
+    tgloop();
   }
 }
