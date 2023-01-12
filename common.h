@@ -1,6 +1,15 @@
-#define EEPROM_SIZE 96 // save ssid & password & device_name
-
 void (*resetFunc)(void) = 0; // reboot device
+
+void NullFunc() {}
+
+void Fatal(String msg)
+{
+    Serial.println(msg);
+    while (1)
+    {
+        /* code */
+    }
+}
 
 #define STATUS_PIN D8 // led pin
 
@@ -24,6 +33,5 @@ void blink_long()
     delay(50);
 }
 
-char buff[1024];
 String name;
 String serverIP;

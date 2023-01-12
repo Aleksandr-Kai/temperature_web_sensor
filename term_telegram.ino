@@ -1,28 +1,31 @@
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include <EEPROM.h>
-
 #include "common.h"
 
+#include "store.h"
+
 #include "temp.h"
-#include "command.h"
+TSensor *tsens;
+
 #include "telegram.h"
 
 #include "html.h"
 #include "wifi.h"
+
 
 //************************************************************************************
 
 // Initialize
 void setup()
 {
-  EEPROM.begin(EEPROM_SIZE);
+  Store::init();
   Serial.begin(115200);
   delay(500);
   TRACELN();
   TRACELN("Start");
 
-  Config cfg = GetWiFiConfig();
+  tsens = new TSensor();
+  // tsens->printSensors();
+
+  Store::Config cfg = Store::Read();
   name = cfg.name;
   TRACE("Device name [%s]\n", name);
 
@@ -30,34 +33,27 @@ void setup()
   delay(1);
   digitalWrite(STATUS_PIN, HIGH);
 
-  DSSet();
-
-  WiFi.hostname("ESP-device");
-  ConnectTo();
-
-  if (WiFi.status() == WL_CONNECTED)
+  if (wifi::Connect())
   {
     TRACE("Connected, IP address: ");
     TRACELN(WiFi.localIP());
 
-    bot.setChatID(BOT_CHAT_ID);
-    bot.attach(newMsg);
-    bot.sendMessage("Подключен датчик [" + name + "]  http://" + serverIP);
+    TelegramBot::init(name, serverIP);
   }
   else
   {
-    CreateAP();
+    wifi::CreateAP();
   }
-  // CreateAP();
-  CreateWebServer();
+  wifi::CreateWebServer();
 }
 
 //************************************************************************************
 void loop()
 {
-  webServer.handleClient();
+  wifi::webServer.handleClient();
   if (WiFi.status() == WL_CONNECTED)
   {
-    tgloop();
+    TelegramBot::bot.tick();
   }
+  tsens->tick();
 }
