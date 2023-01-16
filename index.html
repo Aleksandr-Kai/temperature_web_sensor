@@ -124,12 +124,12 @@
 
         <div id="groupTemp">
             <p id="temp">No temperature</p>
-        <div class="countdown">
-            <svg viewBox="-50 -50 100 100" stroke-width="10">
-                <circle r="45"></circle>
-                <circle r="45" stroke-dasharray="282.7433388230814" stroke-dashoffset="282.7433388230814px"></circle>
-            </svg>
-        </div>
+            <div class="countdown">
+                <svg viewBox="-50 -50 100 100" stroke-width="10">
+                    <circle r="45"></circle>
+                    <circle r="45" stroke-dasharray="282.7433388230814" stroke-dashoffset="282.7433388230814px"></circle>
+                </svg>
+            </div>
         </div>
         <select name="xwidth" id="xwidth">
             <option value="6">1 minut</option>
@@ -171,7 +171,7 @@
             const canvas = document.getElementById('canvas');
             const combo = document.getElementById('xwidth');
             const ctx = canvas.getContext('2d');
-            const devIP = '192.168.0.102';
+            const devIP = '192.168.0.105';
             // const devIP = window.location.host;
 
             
@@ -214,7 +214,7 @@
 
             window.addEventListener('load', ()=>{
                 host.innerText = devIP;//`http://${devIP}/`;
-                fetch(`http://${devIP}/params`)
+                fetch(`http://${devIP}/params?ssid&password&name&temp`)
                 .then(response => response.json())
                 .then(data => {
                     ssid.value = data.ssid;
@@ -228,10 +228,13 @@
                 .catch(error => {err.innerText = error.message;});
             });
             setInterval(() => {
-                fetch(`http://${devIP}/temp`)
+                fetch(`http://${devIP}/params?temp&trend`)
                     .then(response => response.json())
                     .then(data => {
                         temp.innerText = data.temperature;
+                        // let r = data.temperature > 0 ? data.temperature * 6.3 : 0;
+                        // let b = data.temperature < 0 ? data.temperature * -6.3 : 0;
+                        // canvas.style.background = `rgb(${r},100,${b})`;
                         addPoint(data.temperature);
                     })
                     .catch(error => { err.innerText = error.message; });

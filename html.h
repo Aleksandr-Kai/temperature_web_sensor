@@ -1,4 +1,5 @@
-String htmlDocument = R"rawliteral(<!DOCTYPE html>
+String htmlDocument = R"rawliteral(
+    <!DOCTYPE html>
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -124,12 +125,12 @@ String htmlDocument = R"rawliteral(<!DOCTYPE html>
 
         <div id="groupTemp">
             <p id="temp">No temperature</p>
-        <div class="countdown">
-            <svg viewBox="-50 -50 100 100" stroke-width="10">
-                <circle r="45"></circle>
-                <circle r="45" stroke-dasharray="282.7433388230814" stroke-dashoffset="282.7433388230814px"></circle>
-            </svg>
-        </div>
+            <div class="countdown">
+                <svg viewBox="-50 -50 100 100" stroke-width="10">
+                    <circle r="45"></circle>
+                    <circle r="45" stroke-dasharray="282.7433388230814" stroke-dashoffset="282.7433388230814px"></circle>
+                </svg>
+            </div>
         </div>
         <select name="xwidth" id="xwidth">
             <option value="6">1 minut</option>
@@ -213,7 +214,7 @@ String htmlDocument = R"rawliteral(<!DOCTYPE html>
 
             window.addEventListener('load', ()=>{
                 host.innerText = devIP;//`http://${devIP}/`;
-                fetch(`http://${devIP}/params`)
+                fetch(`http://${devIP}/params?ssid&password&name&temp`)
                 .then(response => response.json())
                 .then(data => {
                     ssid.value = data.ssid;
@@ -227,10 +228,13 @@ String htmlDocument = R"rawliteral(<!DOCTYPE html>
                 .catch(error => {err.innerText = error.message;});
             });
             setInterval(() => {
-                fetch(`http://${devIP}/temp`)
+                fetch(`http://${devIP}/params?temp&trend`)
                     .then(response => response.json())
                     .then(data => {
                         temp.innerText = data.temperature;
+                        // let r = data.temperature > 0 ? data.temperature * 6.3 : 0;
+                        // let b = data.temperature < 0 ? data.temperature * -6.3 : 0;
+                        // canvas.style.background = `rgb(${r},100,${b})`;
                         addPoint(data.temperature);
                     })
                     .catch(error => { err.innerText = error.message; });

@@ -1,71 +1,86 @@
+#ifndef TELEGRAM
+#define TELEGRAM
 #include <FastBot.h>
 #include "_telegram.h"
+#include "store.h"
 
-FastBot bot(BOT_TOKEN);
-
-String help = "/temp - get temperature\n" +
-              String("/ip - get web server IP\n");
-
-// обработчик сообщений
-void newMsg(FB_msg &msg)
+namespace TelegramBot
 {
-    if (msg.chatID != BOT_CHAT_ID)
-    { // Проверка доступа
-        bot.sendMessage("Доступ запрещен", msg.chatID);
-        return;
-    }
+    FastBot bot(BOT_TOKEN);
 
-    if (msg.text == "/help")
+    struct Command
     {
-        bot.sendMessage(help);
-    }
-    else if (msg.text == "/temp")
-    {
-        sensors.requestTemperatures();
-        tempSensor1 = sensors.getTempC(sensor1); // Получить значение температуры
-        sprintf(buff, "Температура [%s]: %s", name, String(tempSensor1, 1));
-        bot.sendMessage(buff);
-        Serial.println(buff);
-    }
-    else if (msg.text == "/ip")
-    {
-        bot.sendMessage("Адрес web сервера: http://" + serverIP);
-    }
+        String name;
+        String value;
+        String error;
+    };
 
-    // выводим всю информацию о сообщении
-    // Serial.println(msg.toString());
-    blink();
-}
-
-int loopCount = 0;
-int64_t startedTime = 0;
-int lastTemp = 0;
-
-void tgloop()
-{
-    bot.tick(); // тикаем в луп
-    delay(1);
-    if (++loopCount > 1000)
+    Command ParseCommand(String str)
     {
-        loopCount = 0;
-        startedTime++;
-        if (startedTime >= 60 * 30) // 30 minuts
+        Command cmd;
+        int spacePos = str.indexOf(' ');
+        if (spacePos < 0)
+            cmd.error = "Incorrect command";
+        else
         {
-            startedTime = 0;
-            Serial.println();
-            sensors.requestTemperatures();
-            tempSensor1 = sensors.getTempC(sensor1); // Получить значение температуры
-            if (tempSensor1 - lastTemp > 2)
-            {
-                lastTemp = tempSensor1;
-            }
-            else if (tempSensor1 < lastTemp)
-            {
-                lastTemp = tempSensor1;
-                sprintf(buff, "Температура [%s]: %s", name, String(tempSensor1, 1));
-                bot.sendMessage(buff);
-            }
-            Serial.println("Temperature: " + String(tempSensor1, 1));
+            cmd.name = str.substring(0, spacePos);
+            cmd.value = str.substring(spacePos + 1, str.length());
         }
+
+        if (cmd.name == "" || cmd.value == "")
+            cmd.error = "Incorrect format";
+
+        return cmd;
+    }
+
+    String help = "/temp - get temperature\n" +
+                  String("/ip - get web server IP\n");
+
+    // обработчик сообщений
+    void newMsg(FB_msg &msg)
+    {
+        if (msg.chatID != BOT_CHAT_ID)
+        { // Проверка доступа
+            bot.sendMessage("Доступ запрещен", msg.chatID);
+            return;
+        }
+
+        // wifi::getParamCode(msg.text)
+        if (msg.text == "/help")
+        {
+            bot.sendMessage(help);
+        }
+        else if (msg.text == "/temp")
+        {
+            char buff[256];
+
+            sprintf(buff, "Температура [%s]: %s", name, String(tsens->temp(), 1));
+            bot.sendMessage(buff);
+            Serial.println(buff);
+        }
+        else if (msg.text == "/trend")
+        {
+            char buff[256];
+
+            sprintf(buff, "Тренд [%s]: %s", name, tsens->trend());
+            bot.sendMessage(buff);
+            Serial.println(buff);
+        }
+        else if (msg.text == "/ip")
+        {
+            bot.sendMessage("Адрес web сервера: http://" + serverIP);
+        }
+
+        // выводим всю информацию о сообщении
+        // Serial.println(msg.toString());
+        blink();
+    }
+
+    void init(String devName, String serverIP)
+    {
+        bot.setChatID(BOT_CHAT_ID);
+        bot.attach(newMsg);
+        bot.sendMessage("Подключен датчик [" + devName + "]  http://" + serverIP);
     }
 }
+#endif
