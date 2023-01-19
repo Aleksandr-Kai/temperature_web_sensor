@@ -33,5 +33,5 @@ void blink_long()
     delay(50);
 }
 
-String name;
+String devName;
 String serverIP;

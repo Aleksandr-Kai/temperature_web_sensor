@@ -6,6 +6,8 @@
 
 namespace TelegramBot
 {
+#define ALARM_PIN D7
+
     FastBot bot(BOT_TOKEN);
 
     struct Command
@@ -32,9 +34,42 @@ namespace TelegramBot
 
         return cmd;
     }
+    int32_t menuID = 0;
+    String getTelegramMenu()
+    {
+        String menu = "";
 
-    String help = "/temp - get temperature\n" +
-                  String("/ip - get web server IP\n");
+        int col = 0;
+        for (int i = 0; i < Channels::DoutCount(); i++)
+        {
+            menu += Channels::pinList[i]->Name();
+            menu += Channels::pinList[i]->GetStatus() ? " off" : " on";
+            if (++col == 2)
+            {
+                menu += "\n";
+                col = 0;
+            }
+            else
+                menu += "\t";
+        }
+
+        menu += "get temp\nget trend\nget ip";
+
+        return menu; // menu.substring(0, menu.length());
+    }
+
+    void updateTelegramMenu()
+    {
+        if (menuID == 0)
+        {
+            bot.inlineMenu(devName, getTelegramMenu());
+            menuID = bot.lastBotMsg();
+        }
+        else
+        {
+            bot.editMenu(menuID, getTelegramMenu());
+        }
+    }
 
     // обработчик сообщений
     void newMsg(FB_msg &msg)
@@ -45,34 +80,56 @@ namespace TelegramBot
             return;
         }
 
-        // wifi::getParamCode(msg.text)
-        if (msg.text == "/help")
+        if (msg.text == "/menu")
         {
-            bot.sendMessage(help);
-        }
-        else if (msg.text == "/temp")
-        {
-            char buff[256];
-
-            sprintf(buff, "Температура [%s]: %s", name, String(tsens->temp(), 1));
-            bot.sendMessage(buff);
-            Serial.println(buff);
-        }
-        else if (msg.text == "/trend")
-        {
-            char buff[256];
-
-            sprintf(buff, "Тренд [%s]: %s", name, tsens->trend());
-            bot.sendMessage(buff);
-            Serial.println(buff);
-        }
-        else if (msg.text == "/ip")
-        {
-            bot.sendMessage("Адрес web сервера: http://" + serverIP);
+            Serial.println("Menu request");
+            menuID = 0;
+            updateTelegramMenu();
+            return;
         }
 
-        // выводим всю информацию о сообщении
-        // Serial.println(msg.toString());
+        if (msg.text == devName)
+        {
+            Command cmd = ParseCommand(msg.data);
+            if (cmd.error != "")
+            {
+                bot.sendMessage(cmd.error);
+                return;
+            }
+            if (cmd.name == "get")
+            {
+                if (cmd.value == "temp")
+                {
+                    char buff[256];
+
+                    sprintf(buff, "Температура [%s]: %s", devName, String(tsens->temp(), 1));
+                    bot.sendMessage(buff);
+                    Serial.println(buff);
+                }
+                else if (cmd.value == "trend")
+                {
+                    char buff[256];
+
+                    sprintf(buff, "Тренд [%s]: %s", devName, String(tsens->trend(), 1));
+                    bot.sendMessage(buff);
+                    Serial.println(buff);
+                }
+                else if (cmd.value == "ip")
+                {
+                    bot.sendMessage("Локальный сервер [" + devName + "]: http://" + serverIP);
+                }
+            }
+            else
+            {
+                Serial.printf("SET <%s=%s>\n", cmd.name, cmd.value);
+                if (!Channels::SetPin(cmd.name, cmd.value))
+                {
+                    bot.sendMessage("Не удалось установить параметр");
+                    return;
+                }
+                updateTelegramMenu();
+            }
+        }
         blink();
     }
 
@@ -81,6 +138,12 @@ namespace TelegramBot
         bot.setChatID(BOT_CHAT_ID);
         bot.attach(newMsg);
         bot.sendMessage("Подключен датчик [" + devName + "]  http://" + serverIP);
+        pinMode(ALARM_PIN, OUTPUT);
+        updateTelegramMenu();
+    }
+    void Message(String msg)
+    {
+        bot.sendMessage(msg);
     }
 }
 #endif

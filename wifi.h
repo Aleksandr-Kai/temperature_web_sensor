@@ -81,7 +81,7 @@ namespace wifi
                 break;
             case 2: // name
                 strcpy(cfg.name, webServer.arg(i).c_str());
-                name = cfg.name;
+                devName = cfg.name;
                 break;
             }
         };

@@ -51,19 +51,19 @@ public:
             buffer[i] = KELVIN_ZERO;
     }
 
-    String trend()
+    float trend()
     {
         float avg = 0;
         for (int pos = next(); pos != current; pos = next(pos))
         {
             if (buffer[pos] < -80)
-                return "N/A";
+                return 0;
 
             avg += buffer[next(pos)] - buffer[pos];
             Serial.printf("[%5s] ", String(buffer[pos], 1));
         }
         Serial.printf("[%5s] [TREND: %4s]\n", String(buffer[current], 1), String(avg, 1));
-        return String(avg, 1);
+        return avg;
     }
 };
 
@@ -71,25 +71,15 @@ class TSensor
 {
 private:
     DallasTemperature *sensors;
-    uint8_t sensor1[8] = {0x28, 0xFF, 0x64, 0x1E, 0x5B, 0x86, 0x42, 0xAE};
+    uint8_t sensorAddr[8];
     unsigned long lastTime = millis();
     TRingBuffer *buff;
-
-    void printAddress(DeviceAddress deviceAddress)
-    {
-        for (uint8_t i = 0; i < 8; i++)
-        {
-            Serial.print("0x");
-            if (deviceAddress[i] < 0x10)
-                Serial.print("0");
-            Serial.print(deviceAddress[i], HEX);
-            if (i < 7)
-                Serial.print(", ");
-        }
-        Serial.println("");
-    }
+    bool trendFresh = false;
+    float lastTrend;
 
 public:
+    void (*tempAlarm)() = NULL;
+
     TSensor(int buffSize = TLIST_SIZE)
     {
         OneWire *oneWire = new OneWire(ONE_WIRE_BUS);
@@ -97,22 +87,18 @@ public:
         buff = new TRingBuffer(buffSize);
         buff->clear();
         sensors->begin(); // запуск библиотеки
-    }
 
-    void printSensors()
-    {
         int deviceCount = sensors->getDeviceCount();
-        Serial.printf("Found %i sensor(s)\n", deviceCount);
-        Serial.println("Adress list");
-        DeviceAddress addr;
-        for (int i = 0; i < deviceCount; i++)
+        if (deviceCount > 0)
         {
-            if (!sensors->getAddress(addr, i))
+            DeviceAddress foundAddr;
+            if (sensors->getAddress(foundAddr, 0))
             {
-                Fatal("Can not get sensor addres");
+                for (int i = 0; i < 8; i++)
+                {
+                    sensorAddr[i] = foundAddr[i];
+                }
             }
-            Serial.printf("\tSensor-%i: ", i);
-            printAddress(addr);
         }
     }
 
@@ -121,21 +107,30 @@ public:
         if (millis() - lastTime >= 10000)
         {
             sensors->requestTemperatures();
-            buff->Set(sensors->getTempC(sensor1));
+            buff->Set(sensors->getTempC(sensorAddr));
             lastTime = millis();
+            if (tempAlarm != NULL)
+            {
+                tempAlarm();
+            }
+            trendFresh = false;
         }
     }
-
-    void (*tempAlarm)() = NULL;
 
     float temp()
     {
         return buff->Get();
     }
 
-    String trend()
+    float trend()
     {
-        return buff->trend();
+        if (!trendFresh)
+        {
+            lastTrend = buff->trend();
+            trendFresh = true;
+        }
+
+        return lastTrend;
     }
 };
 #endif

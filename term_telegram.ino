@@ -1,5 +1,5 @@
 #include "common.h"
-
+#include "channels.h"
 #include "store.h"
 
 #include "temp.h"
@@ -10,8 +10,21 @@ TSensor *tsens;
 #include "html.h"
 #include "wifi.h"
 
-
 //************************************************************************************
+int lastAlarmed = 0;
+void tempAlarm()
+{
+  float trend = tsens->trend();
+  if ((trend < -2 || trend > 2) && (lastAlarmed != trend))
+  {
+    lastAlarmed = trend;
+    char buff[128];
+    float temp = tsens->temp();
+    sprintf(buff, "Attention! Temp: %s [Trend: %s]\n", String(temp, 1), String(trend, 1));
+    Serial.println(buff);
+    TelegramBot::Message(buff);
+  }
+}
 
 // Initialize
 void setup()
@@ -22,12 +35,15 @@ void setup()
   TRACELN();
   TRACELN("Start");
 
+  Channels::Init();
+
   tsens = new TSensor();
+  tsens->tempAlarm = tempAlarm;
   // tsens->printSensors();
 
   Store::Config cfg = Store::Read();
-  name = cfg.name;
-  TRACE("Device name [%s]\n", name);
+  devName = cfg.name;
+  TRACE("Device name [%s]\n", devName);
 
   pinMode(STATUS_PIN, OUTPUT);
   delay(1);
@@ -38,7 +54,7 @@ void setup()
     TRACE("Connected, IP address: ");
     TRACELN(WiFi.localIP());
 
-    TelegramBot::init(name, serverIP);
+    TelegramBot::init(devName, serverIP);
   }
   else
   {
